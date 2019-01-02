@@ -1,13 +1,35 @@
 import networking
 import logging
+import config
 import argparse
 
 def GetArguments():
     parser = argparse.ArgumentParser() 
     parser.add_argument("--debug", help="Turns on debug mode. Be careful debug it may output some confidential data", action="store_true") #Add optional debug argument
-    parser.add_argument("--server", help="Start Carnotaurus as the master server. Carnotaurus starts from ", action="store_true") #Add server or client option
+    parser.add_argument("--server", help="Start Carnotaurus as the master server. This will change the config", action="store_true") #Add server option
+    parser.add_argument("--client", help="Start Carnotaurus as a node. This will change the config", action="store_true") #Add client option
     return parser.parse_args() #return all arguments
 
+def GetModeChange(args, c):
+    if args.server == True and args.client == True: #Check if -- server and --client are used at the same time
+        logging.fatal("Can't use --server and --client at the same time. Exiting..")
+        exit(1)
+    elif args.server == False and args.client == False: #Check if they aren't used and continue to load Carnotaurus normally
+        return
+    elif args.server == True:
+        logging.debug("Changing Carnotaurus to server mode")
+        c.ChangeConfigArgument("mode", "server")
+    elif args.client == True:
+        logging.debug("Changing Carnotaurus to node mode")
+        c.ChangeConfigArgument("mode", "client")
+
+def MainServer():
+    logging.info("Initializing TCP server...")
+    netserver = networking.TcpServer("0.0.0.0", 12134) #Initialize the tcp server to listen to all nodes 
+    logging.info("Done initializing TCP server.")
+    logging.info("Initializing Parser...")
+    ps = networking.TcpParser(netserver.mainqueuerecv, netserver.mainqueuesend)
+    logging.info("Done initializing Parser.")
 
 def StartLogging(debug):
     if debug == True:
@@ -18,9 +40,9 @@ def StartLogging(debug):
 if __name__ == "__main__":
     args = GetArguments()
     StartLogging(args.debug)
-    logging.info("Initializing TCP server...")
-    netserver = networking.TcpServer("0.0.0.0", 12134) #Initialize the tcp server to listen to all nodes 
-    logging.info("Done initializing TCP server.")
-    logging.info("Initializing Parser...")
-    ps = networking.TcpParser(netserver.mainqueuerecv, netserver.mainqueuesend)
-    logging.info("Done initializing Parser.")
+    c = config.MainConfig()
+    GetModeChange(args, c)
+    if c.GetConfigArgument("mode") == "server":
+        MainServer()
+    else:
+        logging.fatal("Client not yet implemented")
