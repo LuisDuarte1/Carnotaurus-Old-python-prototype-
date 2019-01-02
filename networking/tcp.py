@@ -13,12 +13,13 @@ class TcpServer(threading.Thread):
     def __init__(self, ip, port):
         super().__init__()
         self.mainqueuerecv = queue.Queue() #set up the main queue that will send the received data to process it
-        self.mainqueuesend = queue.Queue() #set um main queue that will send the data to the node 
+        self.mainqueuesend = queue.Queue() #set up main queue that will send the data to the node 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # use tcp
         self.s.bind((ip, port)) #bind the ip and the port 
         self.s.listen(10) # Start to listen with a max of 10 incoming connections
         self.connlist = {}
         self.start()
+        threading.Thread(target=self.SendToAddr).start()
     
     def run(self):
         while True:
@@ -52,3 +53,18 @@ class TcpServer(threading.Thread):
                 logger.debug("{} disconnected from the server".format(addr))
                 break #Exit the thread if node disconnects from the server
             self.mainqueuerecv.put((addr, data)) #Put the data and the address on the queue to process it 
+    
+    def SendToAddr(self):
+        while True:
+            queuedata = self.mainqueuesend.get() #Get Parser message to send to addr
+            addr = queuedata[0]
+            message = queuedata[1]
+            conn = None
+            for i in self.connlist: #Get conn from node connected list
+                if self.connlist[i]['addr'] == addr:
+                    conn = self.connlist[i]['obj']
+                    break
+            else:
+                logger.warning("{} wasn't in node connection list. Aborting...".format(addr))
+                continue
+            conn.send(message) #Finally send the message to the node
