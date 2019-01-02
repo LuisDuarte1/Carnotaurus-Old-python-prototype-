@@ -8,6 +8,7 @@ def GetArguments():
     parser.add_argument("--debug", help="Turns on debug mode. Be careful debug it may output some confidential data", action="store_true") #Add optional debug argument
     parser.add_argument("--server", help="Start Carnotaurus as the master server. This will change the config", action="store_true") #Add server option
     parser.add_argument("--client", help="Start Carnotaurus as a node. This will change the config", action="store_true") #Add client option
+    parser.add_argument("--output_log", help="Create a log file instead of outputting to STDOUT", type=str)
     return parser.parse_args() #return all arguments
 
 def GetModeChange(args, c):
@@ -31,15 +32,21 @@ def MainServer():
     ps = networking.TcpParser(netserver.mainqueuerecv, netserver.mainqueuesend)
     logging.info("Done initializing Parser.")
 
-def StartLogging(debug):
+def StartLogging(debug, output_log):
     if debug == True:
-        logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.DEBUG)
+        if output_log is not None:
+            logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.DEBUG, filename=output_log)
+        else:
+            logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.DEBUG)
     else:
-        logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.INFO)
-
+        if output_log is not None:
+            logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.INFO, filename=output_log)
+        else:
+            logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.INFO)
+            
 if __name__ == "__main__":
     args = GetArguments()
-    StartLogging(args.debug)
+    StartLogging(args.debug, args.output_log)
     c = config.MainConfig()
     GetModeChange(args, c)
     if c.GetConfigArgument("mode") == "server":
