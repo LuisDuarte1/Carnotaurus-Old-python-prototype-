@@ -29,6 +29,7 @@ class MainConfig:
     def ChangeConfigArgument(self, key, value):
         try:
             self.configdict[key] = value 
+            self.CommitToConfigFile()
         except Exception as e:
             logger.fatal(e) #Log the exception
     
