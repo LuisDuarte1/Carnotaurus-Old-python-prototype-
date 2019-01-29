@@ -16,4 +16,5 @@ class TcpParser(threading.Thread):
             datafromtcpserver = self.mainqueuerecv.get() #Get the data from the queue
             data = datafromtcpserver[1]
             addr = datafromtcpserver[0]
+            logger.debug(data)
             self.mainqueuesend.put((addr, data))

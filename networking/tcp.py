@@ -26,7 +26,7 @@ class TcpServer(threading.Thread):
             conn, addr = self.s.accept() #accept incoming connection
             logger.debug("{} connected to server.".format(addr))
             t = threading.Thread(target=self.ConnToNodeThread, args=(conn, addr,)) #Create a new thread
-            self.connlist[len(self.connlist)] = {'obj': conn, 'addr': addr, 'thread':t} #add connection to list for future use
+            self.connlist[len(self.connlist)] = {'obj': conn, 'addr': addr, 'thread':t, 'conninit':False} #add connection to list for future use
             t.start() #Start the thread that will receive the data
 
     def RemoveNodeFromList(self, addr):
@@ -52,6 +52,14 @@ class TcpServer(threading.Thread):
                 self.RemoveNodeFromList(addr)
                 logger.debug("{} disconnected from the server".format(addr))
                 break #Exit the thread if node disconnects from the server
+            if data == b'conninit':
+                for i in self.connlist:
+                    if addr == self.connlist[i]['addr']:
+                        self.connlist[i]['conninit'] = True
+                        self.mainqueuesend.put(b'connrecv')
+                        break
+                else:
+                    logger.warning("Can't find {} in connection list".format(addr))
             self.mainqueuerecv.put((addr, data)) #Put the data and the address on the queue to process it 
     
     def SendToAddr(self):
@@ -68,3 +76,39 @@ class TcpServer(threading.Thread):
                 logger.warning("{} wasn't in node connection list. Aborting...".format(addr))
                 continue
             conn.send(message) #Finally send the message to the node
+
+class TcpClient(threading.Thread):
+
+    BUFFER_SIZE = 1024
+
+    def __init__(self, ip, port): 
+        super().__init__()
+        self.ip = ip
+        self.port = port
+        self.mainqueuerecv = queue.Queue()
+        self.mainqueuesend = queue.Queue()
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # use tcp
+        self.s.connect((self.ip, self.port))
+        self.s.send(b"conninit") #send init packet to make sure that is the server
+        self.connrecv = False
+        threading.Thread(target=self.SendToServer).start() #thread to send
+        self.start()
+
+    def run(self):
+        while True:
+            try:
+                data = self.s.recv(self.BUFFER_SIZE)
+            except ConnectionResetError:
+                logger.fatal("Connection lost from the server on {}.".format(self.ip))
+                break
+            if data == b'connrecv':
+                self.connrecv = True
+            self.mainqueuerecv.put(data)
+
+    def SendToServer(self):
+        while True:
+            data = self.mainqueuesend.get()
+            if self.connrecv == True:
+                self.s.send(data)
+            else:
+                logger.warning("This client tryed to send a message while the connection wasn't received")

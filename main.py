@@ -32,9 +32,14 @@ def MainServer():
     ps = networking.TcpParser(netserver.mainqueuerecv, netserver.mainqueuesend)
     logging.info("Done initializing Parser.")
 
+def MainClient():
+    logging.info("Trying to connect to the server..")
+    client = networking.TcpClient("127.0.0.1", 12134)
+    logging.info("Connected...")
+    
 def StartLogging(debug, output_log):
     if debug == True:
-        if output_log is not None:
+        if output_log is not None: #check if output log was requested in the args
             logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.DEBUG, filename=output_log)
         else:
             logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.DEBUG)
@@ -52,4 +57,4 @@ if __name__ == "__main__":
     if c.GetConfigArgument("mode") == "server":
         MainServer()
     else:
-        logging.fatal("Client not yet implemented")
+        MainClient()

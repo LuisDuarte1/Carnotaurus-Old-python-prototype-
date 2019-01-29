@@ -1,2 +1,2 @@
-from .tcp import TcpServer
+from .tcp import TcpServer, TcpClient
 from .parser import TcpParser
