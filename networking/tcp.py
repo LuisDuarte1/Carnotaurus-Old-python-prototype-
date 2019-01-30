@@ -18,8 +18,8 @@ class TcpServer(threading.Thread):
         self.s.bind((ip, port)) #bind the ip and the port 
         self.s.listen(10) # Start to listen with a max of 10 incoming connections
         self.connlist = {}
-        self.start()
         threading.Thread(target=self.SendToAddr).start()
+        self.start()
     
     def run(self):
         while True:
@@ -56,7 +56,6 @@ class TcpServer(threading.Thread):
                 for i in self.connlist:
                     if addr == self.connlist[i]['addr']:
                         self.connlist[i]['conninit'] = True
-                        self.mainqueuesend.put(b'connrecv')
                         break
                 else:
                     logger.warning("Can't find {} in connection list".format(addr))
@@ -98,17 +97,19 @@ class TcpClient(threading.Thread):
         while True:
             try:
                 data = self.s.recv(self.BUFFER_SIZE)
-            except ConnectionResetError:
+            except ConnectionResetError: # detect if the connection has been reset
                 logger.fatal("Connection lost from the server on {}.".format(self.ip))
                 break
             if data == b'connrecv':
                 self.connrecv = True
+                logger.info("Connection fully established")
+                continue
             self.mainqueuerecv.put(data)
 
     def SendToServer(self):
         while True:
-            data = self.mainqueuesend.get()
-            if self.connrecv == True:
+            data = self.mainqueuesend.get() #get data from the parser
+            if self.connrecv == True: #only send data to the server if the server has made sure that the connection is established
                 self.s.send(data)
             else:
                 logger.warning("This client tryed to send a message while the connection wasn't received")

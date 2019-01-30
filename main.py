@@ -35,7 +35,9 @@ def MainServer():
 def MainClient():
     logging.info("Trying to connect to the server..")
     client = networking.TcpClient("127.0.0.1", 12134)
-    logging.info("Connected...")
+    logging.info("Initializing Parser...")
+    parser = networking.TcpClientParser(client.mainqueuerecv, client.mainqueuesend)
+    logging.info("Done initializing Parser...")
     
 def StartLogging(debug, output_log):
     if debug == True:
