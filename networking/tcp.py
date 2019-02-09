@@ -103,7 +103,6 @@ class TcpClient(threading.Thread):
             if data == b'connrecv':
                 self.connrecv = True
                 logger.info("Connection fully established")
-                continue
             self.mainqueuerecv.put(data)
 
     def SendToServer(self):
