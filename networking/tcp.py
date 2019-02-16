@@ -89,7 +89,6 @@ class TcpClient(threading.Thread):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # use tcp
         self.s.connect((self.ip, self.port))
         self.s.send(b"conninit") #send init packet to make sure that is the server
-        self.connrecv = False
         threading.Thread(target=self.SendToServer).start() #thread to send
         self.start()
 
@@ -100,15 +99,9 @@ class TcpClient(threading.Thread):
             except ConnectionResetError: # detect if the connection has been reset
                 logger.fatal("Connection lost from the server on {}.".format(self.ip))
                 break
-            if data == b'connrecv':
-                self.connrecv = True
-                logger.info("Connection fully established")
             self.mainqueuerecv.put(data)
 
     def SendToServer(self):
         while True:
             data = self.mainqueuesend.get() #get data from the parser
-            if self.connrecv == True: #only send data to the server if the server has made sure that the connection is established
-                self.s.send(data)
-            else:
-                logger.warning("This client tryed to send a message while the connection wasn't received")
+            self.s.send(data)

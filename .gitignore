@@ -2,3 +2,4 @@
 config.json
 *.log
 carnotaurus.code-workspace
+.vscode/*.*
