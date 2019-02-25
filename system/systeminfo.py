@@ -58,5 +58,3 @@ def GetSpecs():
     system = GetSystem()
     disk_usage = GetDiskUsage(GetPatitions())
     return {'system': system, 'ram': ram, 'cpu': cpu, 'disk_usage':disk_usage}
-
-print(GetSpecs())
