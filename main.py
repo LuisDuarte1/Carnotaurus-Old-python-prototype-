@@ -2,6 +2,11 @@ import networking
 import logging
 import config
 import argparse
+import parsers
+import variables
+
+global typee
+typee = "CLIENT"
 
 def GetArguments():
     parser = argparse.ArgumentParser() 
@@ -25,19 +30,20 @@ def GetModeChange(args, c):
         c.ChangeConfigArgument("mode", "client")
 
 def MainServer():
+    variables.typee = "SERVER"
     logging.info("Initializing TCP server...")
     netserver = networking.TcpServer("0.0.0.0", 12134) #Initialize the tcp server to listen to all nodes 
     logging.info("Done initializing TCP server.")
-    logging.info("Initializing Parser...")
-    ps = networking.TcpParser(netserver.mainqueuerecv, netserver.mainqueuesend)
-    logging.info("Done initializing Parser.")
+    logging.info("Trying to initialize Parser Pool..")
+    parsers.ParserPool(mainqueuerecv = netserver.mainqueuerecv, mainqueuesend = netserver.mainqueuesend)
+    logging.info("Done initializing Parser Pool..")
 
 def MainClient():
     logging.info("Trying to connect to the server..")
     client = networking.TcpClient("127.0.0.1", 12134)
-    logging.info("Initializing Parser...")
-    parser = networking.TcpClientParser(client.mainqueuerecv, client.mainqueuesend)
-    logging.info("Done initializing Parser...")
+    logging.info("Trying to initialize Parser Pool..")
+    parsers.ParserPool(mainqueuerecv = client.mainqueuerecv, mainqueuesend = client.mainqueuesend)
+    logging.info("Done initializing Parser Pool..")
     
 def StartLogging(debug, output_log):
     if debug == True:
@@ -50,7 +56,7 @@ def StartLogging(debug, output_log):
             logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.INFO, filename=output_log)
         else:
             logging.basicConfig(format="[%(module)s] at %(asctime)s: %(levelname)s: %(message)s", level=logging.INFO)
-            
+          
 if __name__ == "__main__":
     args = GetArguments()
     StartLogging(args.debug, args.output_log)
