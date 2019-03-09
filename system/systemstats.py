@@ -1,5 +1,8 @@
 import os
 import time 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def GetCpuUsage(interval):
     """
@@ -34,3 +37,22 @@ def GetFreeRam():
             if i.startswith("MemAvailable"): 
                 return round(int(i.strip().replace("kB", "").split()[1]) / 1024, 2) #Divided by 1024 because we want the result in MB and not kB
 
+def GetProcessList():
+    if os.path.isdir("/proc"):
+        filelist = os.listdir("/proc")
+        remove = []
+        for i in filelist: #Clean up filelist because processes are identified by an integer on a dir
+            try:
+                int(i)
+            except:
+                remove.append(i)
+        for i in remove:
+            filelist.remove(i)
+        program_list = {}
+        for i in filelist: #After, getting the pids, start get the process name which is located in /proc/<pid>/status 
+            with open("/proc/" + i + "/status") as f:
+                for e in f.readlines():
+                    if e.startswith("Name:"):
+                        program_list[i] = {'name': e.strip().replace("Name:\t", "")}
+                        break
+        return program_list

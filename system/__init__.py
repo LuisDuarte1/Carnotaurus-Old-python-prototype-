@@ -1,2 +1,2 @@
 from .systeminfo import GetSpecs
-from .systemstats import GetCpuUsage, GetFreeRam
+from .systemstats import GetCpuUsage, GetFreeRam, GetProcessList
