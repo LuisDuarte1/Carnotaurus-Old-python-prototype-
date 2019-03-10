@@ -5,8 +5,6 @@ import argparse
 import parsers
 import variables
 
-global typee
-typee = "CLIENT"
 
 def GetArguments():
     parser = argparse.ArgumentParser() 

@@ -18,6 +18,7 @@ class ParserPool(threading.Thread):
 
     #This is a list of all parsers, they can be added while running for a future plugin support
     #Every parser must have it's own type CLIENT or SERVER and it's args in order 
+    #The must important parsers must be ordered from most important to least important
     parser_list = {
         'networking_client' : {'type': "CLIENT", 'obj':networking.TcpClientParser, 'args': list(inspect.getargspec(networking.TcpClientParser)[0]), 'active': False},
         'networking_server' : {'type': "SERVER", 'obj':networking.TcpParser, 'args': list(inspect.getargspec(networking.TcpParser)[0]), 'active': False}
@@ -39,3 +40,25 @@ class ParserPool(threading.Thread):
                 self.parser_list[e]['initobj'] = self.parser_list[e]['obj'](*needed_args) #Try to initialize the parser
                 logging.info("Initialized sucessfully {} parser".format(e))
                 self.parser_list[e]['active'] = True
+
+    def InitializeOneParser(self, name):
+        for r in self.parser_list:
+            if r == name:
+                if self.parser_list[r]['type'] != variables.typee: #Check if the types match to avoid caotic stuff
+                    logging.fatal("{} it's not of the same type.\n\tCarnotaurus is running in : {} \n\t Required Type: {} , aborting..".format(r, variables.typee, self.parser_list[r]['type']))
+                    break
+                else:
+                    needed_args = [] 
+                    for i in self._kwargs: #Get all arguments needed for initializing the parser
+                        if i in self.parser_list[r]['args']:
+                            needed_args.append(self._kwargs[i])
+                    if self.parser_list[r]['active'] != True: #Check if parser is already running
+                        logging.info("Trying to initialize {} parser".format(r))
+                        self.parser_list[r]['initobj'] = self.parser_list[r]['obj'](*needed_args) #Try to initialize the parser
+                        logging.info("Initialized sucessfully {} parser".format(r))
+                        self.parser_list[r]['active'] = True
+                    else:
+                        logger.debug("{} is already running.".format(name))
+                    break
+        else:
+            logging.debug("{} wasn't found in parser list.".format(name))
