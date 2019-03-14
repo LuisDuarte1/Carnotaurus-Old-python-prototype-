@@ -26,6 +26,7 @@ class ParserPool(threading.Thread):
 
     def __init__(self, **kwargs): 
         super().__init__()
+        variables.parser_poolobj = self
         self._kwargs = kwargs #Kwargs is needed because it's needed a infinite number of args for n parsers, each parser has it's own requirements like the ip address.
         self.InitializeAllParsers()
 
