@@ -62,3 +62,13 @@ class ParserPool(threading.Thread):
                     break
         else:
             logging.debug("{} wasn't found in parser list.".format(name))
+    
+    def AddArgument(self, argname, argument):
+        if type(argname) == str: #Check if argname is a string
+            for i in self._kwargs: #Check If Argument exists, if it does it will not add it to the argument dict
+                if argname == i:
+                    return
+            self._kwargs[argname] = argument
+        else:
+            logger.fatal("Argname must be a str and not a {}".format(argname))
+            return
