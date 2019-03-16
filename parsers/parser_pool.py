@@ -20,6 +20,7 @@ class ParserPool(threading.Thread):
     #This is a list of all parsers, they can be added while running for a future plugin support
     #Every parser must have it's own type CLIENT or SERVER and it's args in order 
     #The must important parsers must be ordered from most important to least important
+    #Empty types e.g.: "" means that the parser should run on both client and server 
     parser_list = {
         'networking_client' : {'type': "CLIENT", 'obj':networking.TcpClientParser, 'args': list(inspect.getargspec(networking.TcpClientParser)[0]), 'active': False},
         'networking_server' : {'type': "SERVER", 'obj':networking.TcpParser, 'args': list(inspect.getargspec(networking.TcpParser)[0]), 'active': False}
@@ -51,7 +52,7 @@ class ParserPool(threading.Thread):
 
     def InitializeAllParsers(self):
         for e in self.parser_list:
-            if variables.typee == self.parser_list[e]["type"]: #Check if parser matches the current type
+            if variables.typee == self.parser_list[e]["type"] or self.parser_list[e]["type"] == "": #Check if parser matches the current type
                 needed_args = [] 
                 for i in self._kwargs: #Get all arguments needed for initializing the parser
                     if i in self.parser_list[e]['args']:
@@ -67,7 +68,7 @@ class ParserPool(threading.Thread):
     def InitializeOneParser(self, name):
         for r in self.parser_list:
             if r == name:
-                if self.parser_list[r]['type'] != variables.typee: #Check if the types match to avoid caotic stuff
+                if self.parser_list[r]['type'] != variables.typee or self.parser_list[r]["type"] != "": #Check if the types match to avoid caotic stuff
                     logging.fatal("{} it's not of the same type.\n\tCarnotaurus is running in : {} \n\t Required Type: {} , aborting..".format(r, variables.typee, self.parser_list[r]['type']))
                     break
                 else:
