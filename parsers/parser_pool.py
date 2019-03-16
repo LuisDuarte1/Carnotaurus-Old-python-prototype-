@@ -2,6 +2,7 @@ import threading
 import logging
 import inspect #Using inpect to get the required args for each parser
 import sys
+import queue
 sys.path.append('../')
 import variables
 import system
@@ -26,9 +27,27 @@ class ParserPool(threading.Thread):
 
     def __init__(self, **kwargs): 
         super().__init__()
+        self.InterParserQueue = queue.Queue()
         variables.parser_poolobj = self
+        logger.info("Initializing Inter parser communication...")
+        threading.Thread(target=self.InterParserCommunication).start() #Start a thread for InterParserCommunication
+        logger.info("Done initializing Inter parser communication...")
         self._kwargs = kwargs #Kwargs is needed because it's needed a infinite number of args for n parsers, each parser has it's own requirements like the ip address.
         self.InitializeAllParsers()
+
+    def InterParserCommunication(self):
+        while True:
+            data = self.InterParserQueue.get() #Get data from the InterParserQueue to send to the specific queue
+            if type(data) == dict: #Every interparser communication must be in a dict for easier use
+                for i in self.parser_list:
+                    if i == data['to']: #Try to get the corresponding parser
+                        try:
+                            self.parser_list[i]['interparserqueue'].put(data) #Finally, put the data for processing in the parser
+                            break
+                        except KeyError:
+                            logger.fatal("Couldn't find {} Queue".format(i))
+            else:
+                logger.error("Every Parser communication must be a dict and not a {}".format(type(data)))
 
     def InitializeAllParsers(self):
         for e in self.parser_list:
@@ -37,6 +56,9 @@ class ParserPool(threading.Thread):
                 for i in self._kwargs: #Get all arguments needed for initializing the parser
                     if i in self.parser_list[e]['args']:
                         needed_args.append(self._kwargs[i])
+                parserq = queue.Queue()
+                self.parser_list[e]["interparserqueue"] = parserq
+                needed_args.append(parserq) #Append interparserqueue at the end, it is needed to communicate with every parser
                 logging.info("Trying to initialize {} parser".format(e))
                 self.parser_list[e]['initobj'] = self.parser_list[e]['obj'](*needed_args) #Try to initialize the parser
                 logging.info("Initialized sucessfully {} parser".format(e))
@@ -65,7 +87,7 @@ class ParserPool(threading.Thread):
             logging.debug("{} wasn't found in parser list.".format(name))
     
     def AddArgument(self, argname, argument):
-        if type(argname) == str: #Check if argname is a string
+        if type(argname) == str: #Check if argname is a string because keys must be a string
             for i in self._kwargs: #Check If Argument exists, if it does it will not add it to the argument dict
                 if argname == i:
                     return

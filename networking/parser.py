@@ -3,19 +3,33 @@ import logging
 import datetime
 from time import sleep
 import crypto
+import variables
 
 logger = logging.getLogger(__name__)
 
 class TcpParser(threading.Thread):
 
-    def __init__(self, mainqueuerecv, mainqueuesend):
+    def __init__(self, mainqueuerecv, mainqueuesend, interparserqueue):
         super().__init__()
         self.mainqueuerecv = mainqueuerecv #Declare queue from tcp server
         self.mainqueuesend = mainqueuesend #Declare queue from tcp server
         self.server_rsa = crypto.RSA(True) #Initialize RSA creating a private key
+        self.interparserqueue = interparserqueue #Declare queue to get the data from the other parsers
+        self.parser_comms = None
+        threading.Thread(target=self.GetInterParserQueue).start() #Get interparser queue to send data to other parsers
         self.client_rsa = {}
         self.start() #Start the main parser thread
     
+    def GetInterParserQueue(self):
+        while variables.parser_poolobj == None: #Check if parser_pool obj is initialized
+            continue
+        self.parser_comms = variables.parser_poolobj.InterParserQueue
+        logger.debug("Got the interparser queue...")
+
+    def InterParser(self):
+        while True:
+            data = self.interparserqueue.get()
+
     def SendDataToClient(self, addr, message):
         if type(message) != bytes:
             raise TypeError("Message must be in bytes instead of {}".format(type(message)))
@@ -94,10 +108,13 @@ class TcpClientParser(threading.Thread):
     HEARTBEAT_TIME = 1800 #Every 30 minutes send a heartbeat to make sure that the connection is alive
     NOHEARTBEAT_TIMEOUT = HEARTBEAT_TIME * 2
 
-    def __init__(self, mainqueuerecv, mainqueuesend):
+    def __init__(self, mainqueuerecv, mainqueuesend, interparserqueue):
         super().__init__()
         self.mainqueuerecv = mainqueuerecv #Declare queue from tcp server to get the data
         self.mainqueuesend = mainqueuesend #Declare queue from tcp server to send data
+        self.interparserqueue = interparserqueue #Declare queue to get the data from the other parsers
+        self.parser_comms = None
+        threading.Thread(target=self.GetInterParserQueue).start() #Get interparser queue to send data to other parsers
         self.client_rsa = crypto.RSA(True) #Initialize RSA creating a private key
         self.server_rsa = crypto.RSA(False) #Initialize RSA without create a key for future encryption to the server´
         self.aes = crypto.AES(True) #Initialize AES for using after the key exchange
@@ -108,6 +125,17 @@ class TcpClientParser(threading.Thread):
         threading.Thread(target=self.HeartbeatTimeout).start() #Start another heartbeat thread if the server dosent respond to exit Carnotaurus 
         self.start() #Start the main parser thread
     
+
+    def GetInterParserQueue(self):
+        while variables.parser_poolobj == None: #Check if parser_pool obj is initialized
+            continue
+        self.parser_comms = variables.parser_poolobj.InterParserQueue
+        logger.debug("Got the interparser queue...")
+
+    def InterParser(self):
+        while True:
+            data = self.interparserqueue.get()
+
     def HeartbeatTimeout(self):
         while True:
             sleep(self.HEARTBEAT_TIME * 1.25)
