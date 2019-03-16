@@ -23,7 +23,8 @@ class ParserPool(threading.Thread):
     #Empty types e.g.: "" means that the parser should run on both client and server 
     parser_list = {
         'networking_client' : {'type': "CLIENT", 'obj':networking.TcpClientParser, 'args': list(inspect.getargspec(networking.TcpClientParser)[0]), 'active': False},
-        'networking_server' : {'type': "SERVER", 'obj':networking.TcpParser, 'args': list(inspect.getargspec(networking.TcpParser)[0]), 'active': False}
+        'networking_server' : {'type': "SERVER", 'obj':networking.TcpParser, 'args': list(inspect.getargspec(networking.TcpParser)[0]), 'active': False},
+        'system': {'type': "", 'obj':system.SystemParser, 'args':list(inspect.getargspec(system.SystemParser)[0]), 'active':False}
     }
 
     def __init__(self, **kwargs): 

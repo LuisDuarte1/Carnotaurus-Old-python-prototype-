@@ -10,6 +10,7 @@ class SystemParser(threading.Thread):
     """
 
     def __init__(self, interparserqueue):
+        super().__init__()
         self.queuerecv = interparserqueue
         self.start()
 
