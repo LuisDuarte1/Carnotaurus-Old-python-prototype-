@@ -47,7 +47,7 @@ class AES:
     def GetKey(self):
         key = base64.b64encode(self.key).decode("utf-8")
         iv = base64.b64encode(self.iv).decode("utf-8")
-        return json.dumps({'key': key, 'iv': iv}).encode("utf-8")
+        return json.dumps({'key': key, 'iv': iv , 'aesisfkncool':True}).encode("utf-8")
     
     def LoadKey(self, key):
         if type(key) == bytes:

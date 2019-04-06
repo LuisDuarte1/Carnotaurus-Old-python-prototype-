@@ -104,7 +104,7 @@ class TcpParser(threading.Thread):
                     if self.client_rsa[i]['addr'] == addr:
                         self.client_rsa[i]['cryptocomms'] = True
                 continue
-            if b'key' in data and b'iv' in data:
+            if b'key' in data and b'iv' in data and b'aesisfkncool' in data:
                 for i in self.client_rsa:
                     if self.client_rsa[i]['addr'] == addr:
                         aes = crypto.AES(False) 
@@ -149,6 +149,9 @@ class TcpClientParser(threading.Thread):
     def InterParser(self):
         while True:
             data = self.interparserqueue.get()
+            if type(data) == dict:
+                if data['action'] == 'sendserver':
+                    self.SendToServer(data['to_send'].encode("utf-8"))
 
     def HeartbeatTimeout(self):
         while True:

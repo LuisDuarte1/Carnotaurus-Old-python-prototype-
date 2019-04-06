@@ -1,6 +1,7 @@
 import socket
 import queue
 import threading
+import struct
 import logging
 
 logger = logging.getLogger(__name__) #Get logger from main 
@@ -43,7 +44,14 @@ class TcpServer(threading.Thread):
     def ConnToNodeThread(self, conn, addr): #Function that manages one connection
         while True:
             try:
-                data = conn.recv(self.BUFFER_SIZE) #Get data from the node
+                packet = conn.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
+                data = b''
+                msg_len = int(packet[0].decode("utf-8"))
+                logger.debug(msg_len)
+                data += packet[1]
+                while len(data) <  msg_len:
+                    packett = conn.recv(self.BUFFER_SIZE)
+                    data += packett
             except ConnectionResetError:
                 self.RemoveNodeFromList(addr)
                 logger.debug("{} disconnected from the server".format(addr))
@@ -74,7 +82,7 @@ class TcpServer(threading.Thread):
             else:
                 logger.warning("{} wasn't in node connection list. Aborting...".format(addr))
                 continue
-            conn.send(message) #Finally send the message to the node
+            conn.send(str(len(message)).encode("utf-8") + b'\x00\x00\x00\x00\x00\x00' + message) #Finally send the message to the node
 
 class TcpClient(threading.Thread):
 
@@ -88,14 +96,21 @@ class TcpClient(threading.Thread):
         self.mainqueuesend = queue.Queue()
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # use tcp
         self.s.connect((self.ip, self.port))
-        self.s.send(b"conninit") #send init packet to make sure that is the server
+        self.s.send(str(len(b"conninit")).encode("utf-8") + b'\x00\x00\x00\x00\x00\x00' + b"conninit") #send init packet to make sure that is the server
         threading.Thread(target=self.SendToServer).start() #thread to send
         self.start()
 
     def run(self):
         while True:
             try:
-                data = self.s.recv(self.BUFFER_SIZE)
+                packet = self.s.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
+                data = b''
+                msg_len = int(packet[0].decode("utf-8"))
+                logger.debug(msg_len)
+                data += packet[1]
+                while len(data) <  msg_len:
+                    packett = self.s.recv(self.BUFFER_SIZE)
+                    data += packett
             except ConnectionResetError: # detect if the connection has been reset
                 logger.fatal("Connection lost from the server on {}.".format(self.ip))
                 break
@@ -104,4 +119,5 @@ class TcpClient(threading.Thread):
     def SendToServer(self):
         while True:
             data = self.mainqueuesend.get() #get data from the parser
-            self.s.send(data)
+            logger.debug(len(data))
+            self.s.send(str(len(data)).encode("utf-8") + b'\x00\x00\x00\x00\x00\x00' + data)
