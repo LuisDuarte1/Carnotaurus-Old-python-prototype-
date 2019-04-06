@@ -46,8 +46,10 @@ class ParserPool(threading.Thread):
                         try:
                             self.parser_list[i]['interparserqueue'].put(data) #Finally, put the data for processing in the parser
                             break
-                        except KeyError:
+                        except:
                             logger.fatal("Couldn't find {} Queue".format(i))
+                else:
+                    logger.fatal("Couldn't find {} parser in parserlist".format(data['to']))
             else:
                 logger.error("Every Parser communication must be a dict and not a {}".format(type(data)))
 
