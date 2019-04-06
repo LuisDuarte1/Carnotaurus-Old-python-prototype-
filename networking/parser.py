@@ -17,6 +17,7 @@ class TcpParser(threading.Thread):
         self.interparserqueue = interparserqueue #Declare queue to get the data from the other parsers
         self.parser_comms = None
         threading.Thread(target=self.GetInterParserQueue).start() #Get interparser queue to send data to other parsers
+        threading.Thread(target=self.InterParser).start()
         self.client_rsa = {}
         self.start() #Start the main parser thread
     
@@ -29,6 +30,17 @@ class TcpParser(threading.Thread):
     def InterParser(self):
         while True:
             data = self.interparserqueue.get()
+            logger.debug(data)
+            if type(data) == dict:
+                if data['action'] == 'sendall':
+                    self.SendDataToAllClients(data["to_send"].encode("utf-8"))
+                    
+    def SendDataToAllClients(self, message):
+        client_ips = []
+        for i in self.client_rsa:
+            client_ips.append(self.client_rsa[i]['addr'])
+        for i in client_ips:
+            self.SendDataToClient(i, message)
 
     def SendDataToClient(self, addr, message):
         if type(message) != bytes:
@@ -115,6 +127,7 @@ class TcpClientParser(threading.Thread):
         self.interparserqueue = interparserqueue #Declare queue to get the data from the other parsers
         self.parser_comms = None
         threading.Thread(target=self.GetInterParserQueue).start() #Get interparser queue to send data to other parsers
+        threading.Thread(target=self.InterParser).start()
         self.client_rsa = crypto.RSA(True) #Initialize RSA creating a private key
         self.server_rsa = crypto.RSA(False) #Initialize RSA without create a key for future encryption to the server´
         self.aes = crypto.AES(True) #Initialize AES for using after the key exchange
