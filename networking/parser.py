@@ -3,6 +3,7 @@ import logging
 import datetime
 from time import sleep
 import crypto
+import json
 import variables
 
 logger = logging.getLogger(__name__)
@@ -203,3 +204,10 @@ class TcpClientParser(threading.Thread):
                 continue
             if datasv == b'aes_ok':
                 continue
+            if b'{' in datasv: #Try to decode it in json and send it to the respective parser
+                datasv = datasv.decode("utf-8")
+                datajson = json.loads(datasv)
+                parser = datajson['type']
+                del datajson['type']
+                datajson['to'] = parser
+                self.parser_comms.put(datajson)
