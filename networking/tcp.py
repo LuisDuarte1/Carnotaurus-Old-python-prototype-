@@ -1,7 +1,6 @@
 import socket
 import queue
 import threading
-import struct
 import logging
 
 logger = logging.getLogger(__name__) #Get logger from main 
@@ -47,7 +46,6 @@ class TcpServer(threading.Thread):
                 packet = conn.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
                 data = b''
                 msg_len = int(packet[0].decode("utf-8"))
-                logger.debug(msg_len)
                 data += packet[1]
                 while len(data) <  msg_len:
                     packett = conn.recv(self.BUFFER_SIZE)
@@ -106,7 +104,6 @@ class TcpClient(threading.Thread):
                 packet = self.s.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
                 data = b''
                 msg_len = int(packet[0].decode("utf-8"))
-                logger.debug(msg_len)
                 data += packet[1]
                 while len(data) <  msg_len:
                     packett = self.s.recv(self.BUFFER_SIZE)
@@ -119,5 +116,4 @@ class TcpClient(threading.Thread):
     def SendToServer(self):
         while True:
             data = self.mainqueuesend.get() #get data from the parser
-            logger.debug(len(data))
             self.s.send(str(len(data)).encode("utf-8") + b'\x00\x00\x00\x00\x00\x00' + data)

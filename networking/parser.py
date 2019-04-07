@@ -116,6 +116,14 @@ class TcpParser(threading.Thread):
                         logger.debug("{} is now using encrypted communication".format(addr))
                         break
                 continue
+            if data.decode("utf-8").startswith("{"): #Redirect all json to interparser queue to process it
+                jsondata = json.loads(data.decode("utf-8"))
+                to = jsondata['type']
+                del jsondata['type']
+                jsondata['to'] = to
+                jsondata['addr'] = addr
+                self.parser_comms.put(jsondata)
+
 class TcpClientParser(threading.Thread):
 
     HEARTBEAT_TIME = 1800 #Every 30 minutes send a heartbeat to make sure that the connection is alive
