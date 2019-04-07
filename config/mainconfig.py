@@ -1,6 +1,10 @@
 import os.path
 import json
+import uuid
 import logging
+import sys
+sys.path.append('../')
+import variables
 
 logger = logging.getLogger(__name__) #Get logger from main 
 
@@ -10,11 +14,13 @@ class MainConfig:
         if os.path.isfile("config.json") == False:
             self.FirstRun()
         self.LoadConfig()
+        variables.config_obj = self
 
     def FirstRun(self):
         with open("config.json", "w") as f: #Open the config file, overriding if the config already exists
             configdict = {}
             configdict['mode'] = 'client' #Set carnotaurus as client by default, you can change this by using the argument --server
+            configdict['uuid'] = str(uuid.uuid4()) #Create a new uuid for this carnotaurs client/server
             f.write(json.dumps(configdict))
 
     def LoadConfig(self):
