@@ -46,9 +46,9 @@ class ClientDatabase:
            raise TypeError("UUID must be a str and not a {}".format(type(uuid))) 
 
     def AddSpecsToUUID(self, uuid, specs):
-        if type(uuid) == str:
-            if type(specs) == dict:
-                if self.CheckIfUUIDExists(uuid) == True:
+        if type(uuid) == str: #Sanity checking
+            if type(specs) == dict: #Sanity checking one more time
+                if self.CheckIfUUIDExists(uuid) == True: #Check if uuid exists to insert the specs into the respective uuid
                     self.cursor.execute('''
                         UPDATE 'clients' SET "Specs" = ? WHERE UUID = ?
                     ''',(json.dumps(specs), uuid,))
@@ -60,5 +60,38 @@ class ClientDatabase:
         else:
            raise TypeError("UUID must be a str and not a {}".format(type(uuid))) 
 
-c = ClientDatabase("clients.db")
-c.AddSpecsToUUID("hella", {'fkyou':1})
+    def AddNameToUUID(self, uuid, name):
+        if type(uuid) == str:
+            if type(name) == str:
+                if self.CheckIfUUIDExists(uuid) == True:
+                    self.cursor.execute('''
+                        UPDATE 'clients' SET "Name" = ? WHERE UUID = ?
+                        ''', (name, uuid,))
+                    self.conn.commit()
+                else:
+                    logger.fatal("Can't add specs to UUID ({}) because it does not exist in the database.".format(uuid))
+            else:
+                raise TypeError("Name must be a str and not a {}".format(type(name)))
+        else:
+            raise TypeError("UUID must be a str and not a {}".format(type(uuid))) 
+
+    def GetParametersFromUUID(self, uuid, namespecs=True):
+        """
+        When namespecs is True, it returns the name, when it's false it returns the specs of the client 
+        """
+        if type(uuid) == str:
+            if self.CheckIfUUIDExists(uuid) == True:
+                if namespecs == True: #Get the name from the UUID 
+                    self.cursor.execute('''
+                        SELECT Name FROM 'clients' WHERE UUID=?
+                        ''', (uuid,))
+                    return self.cursor.fetchone()[0]
+                else: #Get the specs from the UUID
+                    self.cursor.execute('''
+                        SELECT Specs FROM 'clients' WHERE UUID=?
+                        ''', (uuid,))
+                    return json.loads(self.cursor.fetchone()[0])
+            else:
+                logger.fatal("Can't add specs to UUID ({}) because it does not exist in the database.".format(uuid))
+        else:
+            raise TypeError("UUID must be a str and not a {}".format(type(uuid))) 
