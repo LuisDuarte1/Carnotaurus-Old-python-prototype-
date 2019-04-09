@@ -45,7 +45,10 @@ class TcpServer(threading.Thread):
             try:
                 packet = conn.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
                 data = b''
-                msg_len = int(packet[0].decode("utf-8"))
+                try:
+                    msg_len = int(packet[0].decode("utf-8"))
+                except ValueError:
+                    continue
                 data += packet[1]
                 while len(data) <  msg_len:
                     packett = conn.recv(self.BUFFER_SIZE)
@@ -103,7 +106,10 @@ class TcpClient(threading.Thread):
             try:
                 packet = self.s.recv(self.BUFFER_SIZE).split(b'\x00\x00\x00\x00\x00\x00') #Get data from the node
                 data = b''
-                msg_len = int(packet[0].decode("utf-8"))
+                try:
+                    msg_len = int(packet[0].decode("utf-8"))
+                except ValueError:
+                    continue
                 data += packet[1]
                 while len(data) <  msg_len:
                     packett = self.s.recv(self.BUFFER_SIZE)
