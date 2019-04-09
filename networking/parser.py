@@ -211,6 +211,7 @@ class TcpClientParser(threading.Thread):
                 self.server_rsa.LoadPublicKey(datasv)
                 self.connection_encrypted = True
                 self.SendToServer(self.aes.GetKey())
+                threading.Timer(10, self.SendUUIDToServer)
                 self.use_rsa = False
                 continue
             if datasv == b'aes_ok':
@@ -222,3 +223,10 @@ class TcpClientParser(threading.Thread):
                 del datajson['type']
                 datajson['to'] = parser
                 self.parser_comms.put(datajson)
+
+    def SendUUIDToServer(self):
+        while variables.config_obj == None:
+            continue
+        uuid = variables.config_obj.GetConfigArgument("uuid")
+        logger.debug("Sending UUID to the server...")
+        SendToServer(json.dumps({'type':'clients', 'uuid':uuid, 'action':"process_uuid"}).encode("utf-8"))
