@@ -6,6 +6,7 @@ import queue
 sys.path.append('../')
 import variables
 import system
+import clients
 import networking
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,8 @@ class ParserPool(threading.Thread):
     parser_list = {
         'networking_client' : {'type': "CLIENT", 'obj':networking.TcpClientParser, 'args': list(inspect.getargspec(networking.TcpClientParser)[0]), 'active': False},
         'networking_server' : {'type': "SERVER", 'obj':networking.TcpParser, 'args': list(inspect.getargspec(networking.TcpParser)[0]), 'active': False},
-        'system': {'type': "", 'obj':system.SystemParser, 'args':list(inspect.getargspec(system.SystemParser)[0]), 'active':False}
+        'system': {'type': "", 'obj':system.SystemParser, 'args':list(inspect.getargspec(system.SystemParser)[0]), 'active':False},
+        'clients': {'type': "SERVER", 'obj':clients.ClientParser, 'args':list(inspect.getargspec(clients.ClientParser)[0]), 'active':False}
     }
 
     def __init__(self, **kwargs): 
