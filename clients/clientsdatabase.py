@@ -17,14 +17,16 @@ class ClientDatabase:
             self.cursor.execute('''CREATE TABLE "clients" (
                         "UUID"	TEXT NOT NULL UNIQUE,
                         "Specs"	TEXT,
-                        "Name"	TEXT
+                        "Name"	TEXT,
+                        "IP"	TEXT,
+                        "PORT"  INTEGER
                     );''')
 
     def AddClient(self, uuid):
         if type(uuid) == str: #UUID must be a string to add to the database
             try:
                 self.cursor.execute('''
-                        INSERT INTO 'clients' VALUES (?, NULL, NULL);
+                        INSERT INTO 'clients' VALUES (?, NULL, NULL, NULL, NULL);
                         ''', (uuid,))
             except sqlite3.IntegrityError: #UUID must be unique to avoid collisions 
                 logger.fatal("This UUID ({}) already exists in database".format(uuid))
@@ -95,3 +97,21 @@ class ClientDatabase:
                 logger.fatal("Can't add specs to UUID ({}) because it does not exist in the database.".format(uuid))
         else:
             raise TypeError("UUID must be a str and not a {}".format(type(uuid))) 
+
+    def AddIpToUUID(self, uuid, ip):
+        if type(uuid) == str:
+            if type(ip) == tuple:
+                if self.CheckIfUUIDExists(uuid) == True:
+                    self.cursor.execute('''
+                        UPDATE 'clients' SET "IP" = ? WHERE UUID = ?
+                    ''', (ip[0], uuid))
+                    self.cursor.execute('''
+                        UPDATE 'clients' SET "PORT" = ? WHERE UUID = ?
+                    ''', (ip[1], uuid,))
+                    self.conn.commit()
+                else:
+                    logger.fatal("Can't add specs to UUID ({}) because it does not exist in the database.".format(uuid))
+            else:
+                raise TypeError("IP must be a tuple and not a {}".format(type(tuple)))
+        else:
+            raise TypeError("UUID must be a str and not a {}".format(type(uuid)))
