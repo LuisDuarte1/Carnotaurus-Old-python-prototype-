@@ -115,3 +115,4 @@ class ClientDatabase:
                 raise TypeError("IP must be a tuple and not a {}".format(type(tuple)))
         else:
             raise TypeError("UUID must be a str and not a {}".format(type(uuid)))
+    

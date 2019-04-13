@@ -14,7 +14,7 @@ class ClientParser(threading.Thread):
         super().__init__()
         self.interparserqueue = interparserqueue
         self.parser_comms = None
-        self.db = ClientDatabase("clients.db")
+        self.uuid_ip = {}
         threading.Thread(target=self.GetInterParserQueue).start()
         self.start()
     
@@ -25,7 +25,13 @@ class ClientParser(threading.Thread):
         logger.debug("Got the interparser queue...")
 
     def run(self):
+        self.db = ClientDatabase("clients.db")
         while True:
             data = self.interparserqueue.get()
             if data['action'] == 'process_uuid':
-                pass          
+                if self.db.CheckIfUUIDExists(data['uuid']) == False:
+                    logger.debug("Looks like that this client dosen't yet exist.. Adding it to the data base")
+                    self.db.AddClient(data['uuid'])
+                    self.db.AddIpToUUID(data['uuid'], data['addr'])
+                else:
+                    self.db.AddIpToUUID(data['uuid'], data['addr']) #Update existing IP
